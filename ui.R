@@ -1,9 +1,13 @@
+library(shiny)
+library(leaflet)
+library(shinyjs)
+
 ui <- fluidPage(
-  useShinyjs(),  # Permet l'utilisation des fonctions JavaScript dans Shiny
-  titlePanel("MobilitySverige"),  # Titre de l'application
+  useShinyjs(),
+  titlePanel("MobilitySverige"),
   sidebarLayout(
     sidebarPanel(
-      width = 4,  # Largeur du panneau latéral
+      width = 4,
       selectInput(
         "city", 
         "Municipality:", 
@@ -14,16 +18,20 @@ ui <- fluidPage(
       radioButtons(
         "poiType", 
         "POI Type:", 
-        choices = c("Subway" = "Subway", "Bus" = "Bus", "Train" = "Train")
+        choices = c("Train" = "Train", "Bus" = "Bus")
       ),
-      actionButton("go", "Import POIs"),
-      hr(),  # Ligne horizontale pour la séparation visuelle
-      h4("Total Records"),
-      verbatimTextOutput("totalRecords"),  # Affichage des records total
-      DTOutput("poiTable")  # Table des POIs
+      actionButton("go", "Search", class = "btn-primary"),
+      hr(),
+      h4("City Information"),
+      div(
+        style = "margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; background-color: #f9f9f9;",
+        strong(textOutput("cityPopulation")),
+        strong(textOutput("cityArea")),
+        strong(textOutput("cityDensity"))
+      )
     ),
     mainPanel(
-      leafletOutput("mapPlot")  # Carte Leaflet
+      leafletOutput("mapPlot", height = 600)
     )
   )
 )

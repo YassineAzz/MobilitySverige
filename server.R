@@ -1,14 +1,13 @@
 library(shiny)
 library(tmap)
 library(leaflet)
-library(DT) 
+library(DT)
 library(shinyjs)
 library(httr)
 library(jsonlite)
 
 # Function to get coordinates and API name based on the selected city
 getCityCoordinates <- function(city) {
-  # Mapping from city names displayed to city names used in the API
   city_names_for_api <- c(
     "Stockholm" = "Stockholm",
     "Göteborg" = "Goeteborg",
@@ -32,7 +31,6 @@ getCityCoordinates <- function(city) {
     "Halmstad" = "Halmstad"
   )
   
-  # Coordinate mapping remains as before
   coords <- switch(city,
                    "Stockholm" = c(59.3293, 18.0686),
                    "Göteborg" = c(57.7089, 11.9746),
@@ -54,12 +52,36 @@ getCityCoordinates <- function(city) {
                    "Täby" = c(59.4439, 18.0687),
                    "Växjö" = c(56.8777, 14.8091),
                    "Halmstad" = c(56.6745, 12.8568),
-                   NULL)  # NULL if no city found
+                   NULL)
   
   list(coordinates = coords, apiName = city_names_for_api[city])
 }
 
+# Load population data
+population_data <- read.csv("C:/Users/yassi/Documents/GIS map & data visualization/Assignment final/biggest_city_sweden_data.csv")
+
 server <- function(input, output) {
+  # Observe changes in selected city to update the population display
+  observeEvent(input$city, {
+    if (!is.null(input$city)) {
+      population <- population_data$Population[population_data$City == input$city]
+      area <- population_data$Area[population_data$City == input$city]
+      density <- population_data$Population.Density[population_data$City == input$city]
+      
+      output$cityPopulation <- renderText({
+        paste("Population:", population)
+      })
+      
+      output$cityArea <- renderText({
+        paste("Area:", area, "km²")
+      })
+      
+      output$cityDensity <- renderText({
+        paste("Population Density:", round(density, 2), "people/km²")
+      })
+    }
+  })
+  
   observeEvent(input$go, {
     shinyjs::disable('go')
     shinyjs::delay(5000, shinyjs::enable('go'))
@@ -74,7 +96,6 @@ server <- function(input, output) {
     
     city_data <- getCityCoordinates(input$city)
     if (is.null(city_data$coordinates)) {
-      print("Coordinates not found for the specified city")
       output$mapPlot <- renderTmap({
         tmap_mode("view")
         tm_shape() + tm_basemap(server = "OpenStreetMap")
@@ -82,7 +103,6 @@ server <- function(input, output) {
       return()
     }
     
-    print(input$city)
     url <- "https://gisdataapi.cetler.se/data101"
     params  <- list(
       dbName = 'OSM',
@@ -93,7 +113,7 @@ server <- function(input, output) {
       radius = "5000",
       V = "1",
       key = 'public_transport',
-      value = ifelse(input$poiType == "Subway", "station", ifelse(input$poiType == "Bus", "stop_position", "stop_area")),
+      value = ifelse(input$poiType == "Train", "station", ifelse(input$poiType == "Bus", "stop_position", "stop_area")),
       poly=city_data$apiName
     )
     
@@ -107,14 +127,12 @@ server <- function(input, output) {
           tm_shape(data) + tm_symbols(size = 0.1, col = "blue")
         })
       } else {
-        print("No valid data to display on map.")
         output$mapPlot <- renderTmap({
           tmap_mode("view")
           tm_shape() + tm_basemap(server = "OpenStreetMap")
         })
       }
     } else {
-      print(paste("Error in API response:", status_code(response)))
       output$mapPlot <- renderTmap({
         tmap_mode("view")
         tm_shape() + tm_basemap(server = "OpenStreetMap")
@@ -122,5 +140,3 @@ server <- function(input, output) {
     }
   })
 }
-
-
