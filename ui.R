@@ -9,25 +9,30 @@ ui <- fluidPage(
     sidebarPanel(
       width = 4,
       selectInput(
-        "city", 
-        "Municipality:", 
-        choices = c("Stockholm", "Göteborg", "Malmö", "Uppsala", "Västerås", "Örebro", "Linköping", 
-                    "Helsingborg", "Jönköping", "Norrköping", "Lund", "Umeå", "Gävle", "Borås", 
-                    "Eskilstuna", "Södertälje", "Karlstad", "Täby", "Växjö", "Halmstad")
+        "Country", 
+        "Country:", 
+        choices = c("France","Sweden")
       ),
+      uiOutput("city_selector"),
       radioButtons(
         "poiType", 
-        "POI Type:", 
+        "Mobility type:", 
         choices = c("Train" = "Train", "Bus" = "Bus")
       ),
       actionButton("go", "Search", class = "btn-primary"),
       hr(),
-      h4("City Information"),
+      h4("City Informations"),
       div(
         style = "margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; background-color: #f9f9f9;",
         strong(textOutput("cityPopulation")),
         strong(textOutput("cityArea")),
         strong(textOutput("cityDensity"))
+      ),
+      h4("Mobility Informations"),
+      div(
+        style = "margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; background-color: #f9f9f9;",
+        strong(textOutput("totalRecords")),
+        strong(textOutput("densityStopStation")),
       )
     ),
     mainPanel(

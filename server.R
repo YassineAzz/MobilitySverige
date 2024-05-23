@@ -1,12 +1,3 @@
-library(shiny)
-library(tmap)
-library(leaflet)
-library(DT)
-library(shinyjs)
-library(httr)
-library(jsonlite)
-
-# Function to get coordinates and API name based on the selected city
 getCityCoordinates <- function(city) {
   city_names_for_api <- c(
     "Stockholm" = "Stockholm",
@@ -28,7 +19,26 @@ getCityCoordinates <- function(city) {
     "Karlstad" = "Karlstad",
     "Täby" = "Taeby",
     "Växjö" = "Vaexjoe",
-    "Halmstad" = "Halmstad"
+    "Halmstad" = "Halmstad",
+    "Marseille" = "Marseille",
+    "Lyon" = "Lyon",
+    "Toulouse" = "Toulouse",
+    "Nice" = "Nice",
+    "Nantes" = "Nantes",
+    "Strasbourg" = "Strasbourg",
+    "Montpellier" = "Montpellier",
+    "Bordeaux" = "Bordeaux",
+    "Lille" = "Lille",
+    "Rennes" = "Rennes",
+    "Reims" = "Reims",
+    "Le Havre" = "Le Havre",
+    "Saint-Étienne" = "Saint-Etienne",
+    "Toulon" = "Toulon",
+    "Grenoble" = "Grenoble",
+    "Dijon" = "Dijon",
+    "Angers" = "Angers",
+    "Nîmes" = "Nimes",
+    "Villeurbanne" = "Villeurbanne"
   )
   
   coords <- switch(city,
@@ -52,37 +62,72 @@ getCityCoordinates <- function(city) {
                    "Täby" = c(59.4439, 18.0687),
                    "Växjö" = c(56.8777, 14.8091),
                    "Halmstad" = c(56.6745, 12.8568),
+                   "Marseille" = c(43.2965, 5.3698),
+                   "Lyon" = c(45.7640, 4.8357),
+                   "Toulouse" = c(43.6045, 1.4442),
+                   "Nice" = c(43.7102, 7.2620),
+                   "Nantes" = c(47.2184, -1.5536),
+                   "Strasbourg" = c(48.5734, 7.7521),
+                   "Montpellier" = c(43.6119, 3.8772),
+                   "Bordeaux" = c(44.8378, -0.5792),
+                   "Lille" = c(50.6292, 3.0573),
+                   "Rennes" = c(48.1173, -1.6778),
+                   "Reims" = c(49.2583, 4.0317),
+                   "Le Havre" = c(49.4944, 0.1079),
+                   "Saint-Étienne" = c(45.4397, 4.3872),
+                   "Toulon" = c(43.1242, 5.9280),
+                   "Grenoble" = c(45.1885, 5.7245),
+                   "Dijon" = c(47.3220, 5.0415),
+                   "Angers" = c(47.4784, -0.5632),
+                   "Nîmes" = c(43.8367, 4.3601),
+                   "Villeurbanne" = c(45.7719, 4.8902),
                    NULL)
   
   list(coordinates = coords, apiName = city_names_for_api[city])
 }
 
 # Load population data
-population_data <- read.csv("C:/Users/yassi/Documents/GIS map & data visualization/Assignment final/biggest_city_sweden_data.csv")
+population_data <- read.csv("C:/Users/yassi/Documents/GIS map & data visualization/Assignment final/biggest_city_data.csv")
 
-server <- function(input, output) {
-  # Observe changes in selected city to update the population display
-  observeEvent(input$city, {
-    if (!is.null(input$city)) {
-      population <- population_data$Population[population_data$City == input$city]
-      area <- population_data$Area[population_data$City == input$city]
-      density <- population_data$Population.Density[population_data$City == input$city]
-      
-      output$cityPopulation <- renderText({
-        paste("Population:", population)
-      })
-      
-      output$cityArea <- renderText({
-        paste("Area:", area, "km²")
-      })
-      
-      output$cityDensity <- renderText({
-        paste("Population Density:", round(density, 2), "people/km²")
-      })
+server <- function(input, output, session) {
+  # Update city selectInput based on country selection
+  observeEvent(input$Country, {
+    if (input$Country == "France") {
+      updateSelectInput(session, "city", "Municipality in France:", 
+                        choices = c("Marseille", "Lyon", "Toulouse", "Nice", "Nantes", 
+                                    "Strasbourg", "Montpellier", "Bordeaux", "Lille", "Rennes", 
+                                    "Reims", "Le Havre", "Saint-Étienne", "Toulon", "Grenoble", 
+                                    "Dijon", "Angers", "Nîmes", "Villeurbanne"))
+    } else if (input$Country == "Sweden") {
+      updateSelectInput(session, "city", "Municipality in Sweden:", 
+                        choices = c("Stockholm", "Göteborg", "Malmö", "Uppsala", "Västerås", "Örebro", 
+                                    "Linköping", "Helsingborg", "Jönköping", "Norrköping", "Lund", 
+                                    "Umeå", "Gävle", "Borås", "Eskilstuna", "Södertälje", "Karlstad", 
+                                    "Täby", "Växjö", "Halmstad"))
     }
   })
   
+  output$city_selector <- renderUI({
+    selectInput("city", "Select Municipality:", choices = NULL)
+  })
+  
+  
   observeEvent(input$go, {
+    if (!is.null(input$city)) {
+      population <- population_data$Population[population_data$City == input$city]
+      area <- population_data$Area[population_data$City == input$city]
+      density <- population_data$Density[population_data$City == input$city]
+      
+      output$cityPopulation <- renderText({
+        paste("Population:", ifelse(length(population) > 0, population, "N/A"))
+      })
+      output$cityArea <- renderText({
+        paste("Area:", ifelse(length(area) > 0, area, "N/A"), "km²")
+      })
+      output$cityDensity <- renderText({
+        paste("Density:", ifelse(length(density) > 0, density, "N/A"), "people/km²")
+      })
+    }
     shinyjs::disable('go')
     shinyjs::delay(5000, shinyjs::enable('go'))
     
@@ -116,6 +161,21 @@ server <- function(input, output) {
       value = ifelse(input$poiType == "Train", "station", ifelse(input$poiType == "Bus", "stop_position", "stop_area")),
       poly=city_data$apiName
     )
+    records <- reactiveVal()
+    observeEvent(json_data, {
+      records(length(json_data$poiName)) 
+    })
+    
+    output$totalRecords <- renderText({
+      req(records()) 
+      paste("Total station:", records())
+    })
+    
+    output$densityStopStation <- renderText({
+      req(records()) 
+      density <- records() / 78
+      paste("Density station:", round(density, 1), "station(s)/km²")
+    })
     
     response <- GET(url, query = params)
     if (status_code(response) == 200) {
