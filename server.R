@@ -125,7 +125,7 @@ server <- function(input, output, session) {
         paste("Area:", ifelse(length(area) > 0, area, "N/A"), "km²")
       })
       output$cityDensity <- renderText({
-        paste("Density:", ifelse(length(density) > 0, density, "N/A"), "people/km²")
+        paste("Density:", ifelse(length(density) > 0, round(density, 1), "N/A"), "people/km²")
       })
     }
     shinyjs::disable('go')
@@ -184,7 +184,7 @@ server <- function(input, output, session) {
         data <- st_as_sf(json_data, coords = c("longitude", "latitude"), crs = 4326, agr = "constant")
         output$mapPlot <- renderTmap({
           tmap_mode("view")
-          tm_shape(data) + tm_symbols(size = 0.1, col = "blue")
+          tm_shape(data) + tm_symbols(size = 0.05, col = "blue")+ tm_basemap(server = "OpenStreetMap")
         })
       } else {
         output$mapPlot <- renderTmap({
