@@ -204,7 +204,7 @@ server <- function(input, output, session) {
         data <- st_as_sf(json_data, coords = c("longitude", "latitude"), crs = 4326, agr = "constant")
         output$mapPlot <- renderTmap({
           tmap_mode("view")
-          tm_shape(data) + tm_symbols(size = 0.0001, col = 'black')+ tm_basemap(server = "OpenStreetMap")
+          tm_shape(data) + tm_symbols(size = 0.05, col = "blue")+ tm_basemap(server = "OpenStreetMap")
         })
       } else {
         output$mapPlot <- renderTmap({
