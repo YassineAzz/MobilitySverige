@@ -86,11 +86,11 @@ getCityCoordinates <- function(city) {
   list(coordinates = coords, apiName = city_names_for_api[city])
 }
 
-# Load population data
+# Load population data (CSV file added manually info from Wikiu)
 population_data <- read.csv("C:/Users/yassi/Documents/GIS map & data visualization/Assignment final/biggest_city_data.csv")
 
 server <- function(input, output, session) {
-  # Update city selectInput based on country selection
+  # Update city selectInput (Dynamic) to improve app
   observeEvent(input$Country, {
     if (input$Country == "France") {
       updateSelectInput(session, "city", "Municipality in France:", 
@@ -111,7 +111,7 @@ server <- function(input, output, session) {
     selectInput("city", "Select Municipality:", choices = NULL)
   })
   
-  
+  #Info from the csv file (Add info ?)
   observeEvent(input$go, {
     if (!is.null(input$city)) {
       population <- population_data$Population[population_data$City == input$city]
@@ -139,6 +139,7 @@ server <- function(input, output, session) {
       return()
     }
     
+    #use the fonction get coord 
     city_data <- getCityCoordinates(input$city)
     if (is.null(city_data$coordinates)) {
       output$mapPlot <- renderTmap({
@@ -148,6 +149,7 @@ server <- function(input, output, session) {
       return()
     }
     
+    #parameters pf request
     url <- "https://gisdataapi.cetler.se/data101"
     params  <- list(
       dbName = 'OSM',
@@ -173,13 +175,31 @@ server <- function(input, output, session) {
     
     output$densityStopStation <- renderText({
       req(records()) 
-      density <- records() / 78
+      density <- records() / 78 #to convert from total into /km² (radius = "5000" if edit edit here too)
       paste("Density station:", round(density, 1), "station(s)/km²")
     })
     
+    #To add information to the website
+    output$poiTable <- renderDataTable({
+      data <- json_data[, c("value", "poiName", "within_500m")]
+      data$value[data$value == "stop_position"] <- "Bus stop"
+      data$value[data$value == "station"] <- "Train stop"
+      data <- data %>% rename('Stop type' = value, 'Station name' = poiName, 'Nearby stations' = within_500m)
+      datatable(data, options = list(pageLength = 5, searching = FALSE, paging = TRUE)) 
+    })
+
     response <- GET(url, query = params)
     if (status_code(response) == 200) {
       json_data <- fromJSON(content(response, "text"))
+      print(json_data)
+      json_data <- fromJSON(content(response, "text"))
+      bus_stops <- st_as_sf(json_data, coords = c("longitude", "latitude"), crs = 4326)
+      distances <- st_distance(bus_stops)
+      # Add column to data (find around 500m)
+      #Maybe change method take some time for big cities
+      within_500m <- apply(distances, 1, function(row) if (any(row < 500 & row != 0)) "Yes" else "No")
+      json_data$within_500m <- within_500m
+      
       if (!is.null(json_data) && length(json_data) > 0 && "longitude" %in% names(json_data) && "latitude" %in% names(json_data)) {
         data <- st_as_sf(json_data, coords = c("longitude", "latitude"), crs = 4326, agr = "constant")
         output$mapPlot <- renderTmap({
