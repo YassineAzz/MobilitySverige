@@ -87,7 +87,7 @@ getCityCoordinates <- function(city) {
 }
 
 # Load population data (CSV file added manually info from Wikiu)
-population_data <- read.csv("C:/Users/yassi/Documents/GIS map & data visualization/Assignment final/biggest_city_data.csv")
+population_data <- read.csv("data/biggest_city_data.csv")
 
 server <- function(input, output, session) {
   # Update city selectInput (Dynamic) to improve app
@@ -191,7 +191,7 @@ server <- function(input, output, session) {
     response <- GET(url, query = params)
     if (status_code(response) == 200) {
       json_data <- fromJSON(content(response, "text"))
-      print(json_data)
+      #print(json_data)
       json_data <- fromJSON(content(response, "text"))
       bus_stops <- st_as_sf(json_data, coords = c("longitude", "latitude"), crs = 4326)
       distances <- st_distance(bus_stops)
@@ -204,7 +204,7 @@ server <- function(input, output, session) {
         data <- st_as_sf(json_data, coords = c("longitude", "latitude"), crs = 4326, agr = "constant")
         output$mapPlot <- renderTmap({
           tmap_mode("view")
-          tm_shape(data) + tm_symbols(size = 0.05, col = "blue")+ tm_basemap(server = "OpenStreetMap")
+          tm_shape(data) + tm_symbols(size = 0.0001, col = 'black')+ tm_basemap(server = "OpenStreetMap")
         })
       } else {
         output$mapPlot <- renderTmap({
